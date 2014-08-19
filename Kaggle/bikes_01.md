@@ -661,6 +661,12 @@ cor(tree.pred, t1test$count)
 ## [1] 0.8252
 ```
 
+```r
+plot(t1test$count - tree.pred)
+```
+
+![plot of chunk correlation](figure/correlation.png) 
+
 ### now, the original train
 CART with the original train.
 
