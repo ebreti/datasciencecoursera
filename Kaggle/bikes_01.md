@@ -75,7 +75,7 @@ I will use some knowledge (against the machine learnig principles).
 * There are different uses: transportation and fun.  
 * There is a window of optimal conditions: climatic conditions within limits.  
 
-## getting data  
+## getting the data  
 ### the wd  
 
 ```r
@@ -151,7 +151,7 @@ Otherwise, they give us something else.
 #
 ```
 
-### getting the data
+### finally  
 
 ```r
 train <- read.csv(file=trainFile)
@@ -263,6 +263,8 @@ summary(lightHours$plight)
 
 ### preparation  
 
+Merge the information about percent of day light with the original data.  
+
 ```r
 dth <- data.table(lightHours, key="date")
 t1 <- train
@@ -300,6 +302,8 @@ str(dt)
 
 ### train and test of original train  
 
+Take 55% for train and 45% for test.
+
 ```r
 library(caTools)
 set.seed(1108)
@@ -320,6 +324,7 @@ t1test <- subset(dt, !split)
 ```
 
 ### simple model  
+CART as described above.
 
 ```r
 library(rpart)
@@ -333,6 +338,7 @@ prp(tree)
 ![plot of chunk cart](figure/cart.png) 
 
 ### prediction  
+Predict - the figures.
 
 ```r
 tree.pred <- as.integer(predict(tree, newdata=t1test))
@@ -355,6 +361,7 @@ summary(t1train$count)
 ```
 
 ### correlation  
+The measure of the correlation of the prediction and the real figures.
 
 ```r
 cor(tree.pred, t1test$count)
@@ -364,7 +371,8 @@ cor(tree.pred, t1test$count)
 ## [1] 0.8252
 ```
 
-### now the full train
+### now, the original train
+CART with the original train.
 
 ```r
 treeAll <- rpart(count ~ season + plight + dhour + week_day 
@@ -384,6 +392,9 @@ summary(dt$count)
 ##       1      42     145     192     284     977
 ```
 
+### preparation of test
+Merge the information about percent of day light with the original data. 
+
 ```r
 t2 <- test
 t2$date <- as.Date(t2$datetime, format="%Y-%m-%d")
@@ -391,9 +402,14 @@ t2$week_day <- wday(as.Date(test$datetime, format = "%Y-%m-%d %H:%M:%S"))
 t2$dhour <- as.numeric(format(strptime(test$datetime, format = "%Y-%m-%d %H:%M:%S"), "%H"))
 dtt2 <- data.table(t2, key="date")
 dt2 <- dth[dtt2]
+```
 
-submit.pred <- as.integer(predict(tree, newdata=dt2))
-summary(submit.pred)
+### prediction  
+test predict - the figures.
+
+```r
+test.pred <- as.integer(predict(tree, newdata=dt2))
+summary(test.pred)
 ```
 
 ```
@@ -401,9 +417,24 @@ summary(submit.pred)
 ##      33      33     165     192     226     571
 ```
 
+### write response
+The file samplesubmission is paired with the test file. So, we can override count with test.pred and use the column names and the date values. Because the data frame test wasn't ordered during the process.
+
 ```r
-write.csv(submit.pred, file="./data/sub140808D.csv")
+result <- data.table(sampleSubmission, key = "datetime", keep.rownames = )
+result$count <- test.pred
+write.csv(result, file="./data/sub140808D.csv")
+str(result)
 ```
+
+```
+## Classes 'data.table' and 'data.frame':	6493 obs. of  2 variables:
+##  $ datetime: Factor w/ 6493 levels "2011-01-20 00:00:00",..: 1 2 3 4 5 6 7 8 9 10 ...
+##  $ count   : int  33 33 33 33 33 33 33 165 165 165 ...
+##  - attr(*, "sorted")= chr "datetime"
+##  - attr(*, ".internal.selfref")=<externalptr>
+```
+You must open the resulting spreadsheet and delete the first column (unnamed) with the indexes, before submitting the file to Kaggle.  
 
 # Evaluation  
 
